@@ -1,0 +1,51 @@
+version: "3.8"
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ../wordpress:/var/www/html
+      - ./log/nginx:/var/log/nginx
+    depends_on:
+      - php
+
+  php:
+    build: ./wordpress
+    volumes:
+      - ../wordpress:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+    restart: always
+    depends_on:
+      - db
+
+  db:
+    # image: mysql:5.7
+    image: mariadb:10.5
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${WORDPRESS_DB_NAME}
+      MYSQL_USER: ${WORDPRESS_DB_USER}
+      MYSQL_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      TZ: "Asia/Tokyo"
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin
+    environment:
+      PMA_HOST: "db"
+      UPLOAD_LIMIT: 102400000
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8888:80
